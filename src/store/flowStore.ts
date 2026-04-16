@@ -94,6 +94,7 @@ function buildSettingsFromState(s: FlowState): SettingsV1 {
 
 export const useFlowStore = create<FlowState>((set, get) => ({
   draftText: '',
+  draftHistory: [],
   atmosphereMode: 'rain',
   snowBackgroundId: DEFAULT_SNOW_BACKGROUND,
   alwaysShowControls: false,
@@ -159,6 +160,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({
       ...mergeSettingsIntoStore(settings),
       draftText: draft,
+      draftHistory: loadDraftHistory(),
       storageError: error === 'corrupt' ? '设置已重置（存储数据损坏）' : null,
       hydrated: true,
     });
