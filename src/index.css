@@ -1,0 +1,606 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  background: #0a0e12;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(160, 210, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.fs-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* —— Atmosphere —— */
+.fs-atmosphere-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fs-atmosphere {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fs-fallback-stack {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.fs-fallback-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px) saturate(0.85);
+}
+
+.fs-fallback-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.fs-fallback-msg {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.04em;
+}
+
+.fs-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.72);
+  z-index: 1;
+}
+
+/* —— Top mode strip —— */
+.fs-top-strip {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 48px;
+  padding: 0 1rem;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.fs-top-strip--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fs-mode {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+  font-family: inherit;
+}
+
+.fs-mode:hover,
+.fs-mode:focus-visible {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fs-mode--active {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.fs-mode-sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.75rem;
+}
+
+.fs-snow-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fs-snow-picker {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  /* padding-top bridges the gap from the button so the pointer stays inside the picker hit area */
+  margin-top: 0;
+  min-width: 11rem;
+  padding: 10px 0 6px;
+  border-radius: 10px;
+  background: rgba(12, 16, 22, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+
+.fs-snow-picker button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.fs-snow-picker button:hover,
+.fs-snow-picker button:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.fs-snow-picker button.fs-snow-picker--active {
+  color: rgba(160, 210, 255, 0.95);
+}
+
+/* —— Deck —— */
+.fs-deck-outer {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  pointer-events: none;
+}
+
+.fs-deck {
+  pointer-events: auto;
+  position: relative;
+  width: min(720px, 92vw);
+  height: min(70vh, 640px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(var(--deck-blur, 24px));
+  -webkit-backdrop-filter: blur(var(--deck-blur, 24px));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1rem 2.5rem;
+  transition: box-shadow 0.3s ease;
+}
+
+.fs-deck--pulse {
+  animation: fs-deck-pulse 1.2s ease-out 1;
+}
+
+@keyframes fs-deck-pulse {
+  0% {
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  }
+  40% {
+    box-shadow: 0 24px 100px rgba(120, 180, 255, 0.25);
+  }
+  100% {
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.fs-font-0 .fs-editor {
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.fs-font-1 .fs-editor {
+  font-family: 'Noto Serif SC', serif;
+}
+
+.fs-font-2 .fs-editor {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.fs-font-cycle {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.75rem;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.15);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fs-font-cycle:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.fs-editor {
+  flex: 1;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.5rem 0.35rem;
+  border: none;
+  resize: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.fs-editor::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.fs-editor:focus {
+  outline: none;
+}
+
+/* —— Chrome —— */
+.fs-chrome {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.65rem;
+  opacity: 0.15;
+  transition: opacity 0.35s ease;
+}
+
+.fs-deck:hover .fs-chrome,
+.fs-deck:focus-within .fs-chrome {
+  opacity: 1;
+}
+
+.fs-chrome__btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.2rem;
+}
+
+.fs-chrome__btn:hover,
+.fs-chrome__btn:focus-visible {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* —— Mixer —— */
+.fs-mixer-handle {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 18;
+  width: 2.5rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  pointer-events: auto;
+}
+
+.fs-mixer-handle__bar {
+  display: block;
+  width: 14px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 1px;
+}
+
+.fs-mixer-panel {
+  position: fixed;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 19;
+  width: min(360px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(18, 24, 32, 0.55);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.fs-mixer-row--modes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.fs-mixer-label {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.04em;
+}
+
+.fs-mixer-val {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fs-mixer-panel input[type='range'] {
+  width: 100%;
+  margin: 0.15rem 0 0.35rem;
+  accent-color: rgba(140, 190, 255, 0.7);
+}
+
+.fs-mixer-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.4;
+}
+
+.fs-mixer-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* —— Zen timer —— */
+.fs-zen {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 17;
+  width: min(220px, 45vw);
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 16, 22, 0.45);
+  backdrop-filter: blur(16px);
+  font-size: 0.72rem;
+}
+
+.fs-zen__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.fs-zen__chip {
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.65rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fs-zen__chip--on {
+  border-color: rgba(160, 200, 255, 0.45);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.fs-zen__custom {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.fs-zen__custom input {
+  width: 3.5rem;
+  padding: 0.15rem 0.25rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font-family: inherit;
+}
+
+.fs-zen__bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 0.25rem 0;
+}
+
+.fs-zen__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(100, 160, 255, 0.3), rgba(160, 210, 255, 0.65));
+  transition: width 1s linear;
+}
+
+.fs-zen__time {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0.25rem 0;
+}
+
+.fs-zen__actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.fs-zen__actions button {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fs-zen__actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* —— Modal —— */
+.fs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.fs-modal {
+  width: min(400px, 100%);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(22, 28, 38, 0.92);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.fs-modal__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.fs-modal__body {
+  margin: 0 0 1.25rem;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+}
+
+.fs-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.fs-modal__btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fs-modal__btn--danger {
+  border-color: rgba(255, 120, 100, 0.45);
+  color: rgba(255, 180, 170, 0.95);
+}
+
+.fs-storage-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(80, 20, 20, 0.92);
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.fs-storage-banner button {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fs-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  backdrop-filter: blur(12px);
+}
