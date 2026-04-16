@@ -43,6 +43,7 @@ export type FlowState = {
   hydrate: () => void;
   persistSettings: () => void;
   saveNow: () => void;
+  restoreDraftFromHistory: (id: string) => void;
   confirmRelease: () => void;
   exportDraft: () => void;
   bumpDeckPulse: () => void;
@@ -188,7 +189,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     }, 2000);
   },
 
-  restoreDraftFromHistory: (id) => {
+  restoreDraftFromHistory: (id: string) => {
     const entry = get().draftHistory.find((e) => e.id === id);
     if (!entry) return;
     set({ draftText: entry.text });
