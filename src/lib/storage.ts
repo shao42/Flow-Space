@@ -8,8 +8,9 @@ export type AtmosphereMode = 'rain' | 'snow';
 
 export type { SnowBackgroundId };
 
+/** `2` = mixer defaults reset policy (see `migrateSettings`). */
 export interface SettingsV1 {
-  version: 1;
+  version: 1 | 2;
   atmosphereMode: AtmosphereMode;
   snowBackgroundId: SnowBackgroundId;
   alwaysShowControls: boolean;
@@ -29,7 +30,7 @@ export interface SettingsV1 {
 
 export function defaultSettings(): SettingsV1 {
   return {
-    version: 1,
+    version: 2,
     atmosphereMode: 'rain',
     snowBackgroundId: DEFAULT_SNOW_BACKGROUND,
     alwaysShowControls: false,
@@ -75,7 +76,14 @@ export function migrateSettings(raw: unknown): SettingsV1 {
   const base = defaultSettings();
   if (!raw || typeof raw !== 'object') return base;
   const o = raw as Record<string, unknown>;
-  return { ...base, ...parsePartialSettings(o) };
+  const storedVersion = o.version === 2 ? 2 : typeof o.version === 'number' ? o.version : 1;
+  const partial = parsePartialSettings(o);
+  const merged: SettingsV1 = { ...base, ...partial };
+  if (storedVersion < 2) {
+    merged.mixer = { ...base.mixer };
+  }
+  merged.version = 2;
+  return merged;
 }
 
 function parsePartialSettings(o: Record<string, unknown>): Partial<SettingsV1> {

@@ -77,7 +77,7 @@ function scheduleDraftSave(getText: () => string, onFail: (reason: string) => vo
 
 function buildSettingsFromState(s: FlowState): SettingsV1 {
   return {
-    version: 1,
+    version: 2,
     atmosphereMode: s.atmosphereMode,
     snowBackgroundId: s.snowBackgroundId,
     alwaysShowControls: s.alwaysShowControls,

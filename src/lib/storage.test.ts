@@ -55,9 +55,23 @@ describe('storage', () => {
 
   it('migrateSettings from empty object uses defaults', () => {
     const m = migrateSettings({});
-    expect(m.version).toBe(1);
+    expect(m.version).toBe(2);
     expect(m.atmosphereMode).toBe('rain');
     expect(m.snowBackgroundId).toBe('mountain_forest');
+  });
+
+  it('migrates v1 stored settings to v2 mixer defaults', () => {
+    const m = migrateSettings({
+      version: 1,
+      mixer: {
+        intensity01: 1,
+        blurPx: 24,
+        noise01: 0.5,
+        musicBlend01: 0.5,
+      },
+    });
+    expect(m.version).toBe(2);
+    expect(m.mixer).toEqual(defaultSettings().mixer);
   });
 
   it('migrateSettings maps removed still mode to rain', () => {
@@ -68,7 +82,7 @@ describe('storage', () => {
   it('corrupt JSON yields defaults with error flag', () => {
     localStorage.setItem(SETTINGS_KEY, '{');
     const { settings, error } = loadSettings();
-    expect(settings.version).toBe(1);
+    expect(settings.version).toBe(2);
     expect(error).toBe('corrupt');
   });
 

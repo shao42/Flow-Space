@@ -37,10 +37,15 @@ export function VibeMixer() {
 
   useEffect(() => {
     if (!open) return;
+    const inside = (root: HTMLElement | null, e: PointerEvent) => {
+      if (!root) return false;
+      const t = e.target as Node | null;
+      if (t && root.contains(t)) return true;
+      return typeof e.composedPath === 'function' && e.composedPath().includes(root);
+    };
     const onPointerDown = (e: PointerEvent) => {
-      const t = e.target as Node;
-      if (handleRef.current?.contains(t)) return;
-      if (panelRef.current?.contains(t)) return;
+      if (inside(handleRef.current, e)) return;
+      if (inside(panelRef.current, e)) return;
       setOpen(false);
     };
     document.addEventListener('pointerdown', onPointerDown, true);
@@ -74,8 +79,9 @@ export function VibeMixer() {
         <span className="fs-mixer-handle__bar" />
       </button>
 
-      {open && (
+        {open && (
         <div
+          ref={panelRef}
           id="fs-vibe-mixer"
           className="fs-mixer-panel"
           role="dialog"
