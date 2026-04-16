@@ -35,9 +35,9 @@ export function defaultSettings(): SettingsV1 {
     alwaysShowControls: false,
     fontIndex: 0,
     mixer: {
-      intensity01: 1,
-      blurPx: 24,
-      noise01: 0.5,
+      intensity01: 0.3,
+      blurPx: 25,
+      noise01: 0,
       musicBlend01: 0.5,
     },
     timer: {

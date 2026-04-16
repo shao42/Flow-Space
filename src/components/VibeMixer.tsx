@@ -12,6 +12,7 @@ export function VibeMixer() {
 
   const [open, setOpen] = useState(false);
   const handleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const openMixer = useCallback(() => {
     getAudioEngine().unlock();
@@ -34,6 +35,18 @@ export function VibeMixer() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [toggleMixer]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (handleRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open]);
+
   const intensityLabel = mode === 'rain' ? 'Rain intensity' : 'Snow density';
 
   return (
@@ -46,11 +59,13 @@ export function VibeMixer() {
         aria-controls="fs-vibe-mixer"
         aria-label="氛围控制台"
         tabIndex={0}
-        onClick={() => toggleMixer()}
+        onClick={() => {
+          if (!open) openMixer();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            toggleMixer();
+            if (!open) openMixer();
           }
         }}
       >
@@ -128,8 +143,6 @@ export function VibeMixer() {
             value={Math.round(mixer.musicBlend01 * 100)}
             onChange={(e) => setMixer({ musicBlend01: Number(e.target.value) / 100 })}
           />
-
-          <p className="fs-mixer-hint">音乐层使用 public/audio/ 中的曲目（见 audioEngine）</p>
 
           <label className="fs-mixer-footer">
             <input

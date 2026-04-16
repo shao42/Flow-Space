@@ -97,7 +97,7 @@ export class AudioEngine {
   }
 
   private lastMode: AtmosphereMode = 'rain';
-  private lastMixer: MixerSlice = { noise01: 0.5, musicBlend01: 0.5, intensity01: 1 };
+  private lastMixer: MixerSlice = { noise01: 0, musicBlend01: 0.5, intensity01: 0.3 };
 
   apply(mode: AtmosphereMode, mixer: MixerSlice): void {
     this.lastMode = mode;

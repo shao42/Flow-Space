@@ -391,13 +391,6 @@ body {
   accent-color: rgba(140, 190, 255, 0.7);
 }
 
-.fs-mixer-hint {
-  margin: 0.5rem 0 0;
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.35);
-  line-height: 1.4;
-}
-
 .fs-mixer-footer {
   display: flex;
   align-items: center;
