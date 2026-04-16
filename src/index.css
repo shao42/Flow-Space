@@ -315,6 +315,74 @@ body {
   color: rgba(255, 255, 255, 0.95);
 }
 
+.fs-draft-history {
+  position: relative;
+}
+
+.fs-draft-history__panel {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 6px;
+  min-width: 14rem;
+  max-width: min(22rem, 92vw);
+  padding: 0.5rem 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 18, 26, 0.94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+
+.fs-draft-history__empty {
+  margin: 0;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.45;
+}
+
+.fs-draft-history__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fs-draft-history__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.45rem 0.85rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fs-draft-history__item:hover,
+.fs-draft-history__item:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.fs-draft-history__time {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.fs-draft-history__preview {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 /* —— Mixer —— */
 .fs-mixer-handle {
   position: fixed;

@@ -5,15 +5,19 @@ import {
   loadSettings,
   saveSettings,
   clearDraft,
+  loadDraftHistory,
+  pushDraftHistorySnapshot,
   type SettingsV1,
   type AtmosphereMode,
   type SnowBackgroundId,
+  type DraftHistoryEntry,
 } from '../lib/storage';
 import { DEFAULT_SNOW_BACKGROUND } from '../lib/snowBackgrounds';
 import { buildExportFilename, downloadTextFile } from '../lib/exportDraft';
 
 export type FlowState = {
   draftText: string;
+  draftHistory: DraftHistoryEntry[];
   atmosphereMode: AtmosphereMode;
   snowBackgroundId: SnowBackgroundId;
   alwaysShowControls: boolean;
@@ -172,10 +176,30 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       set({ storageError: `${STORAGE_FAIL_MSG} (${r.reason})` });
       return;
     }
+    const hp = pushDraftHistorySnapshot(get().draftText);
+    if (!hp.ok) {
+      set({ storageError: `${STORAGE_FAIL_MSG} (${hp.reason})` });
+      return;
+    }
     get().persistSettings();
-    set({ saveToast: '已保存' });
+    set({ draftHistory: loadDraftHistory(), saveToast: '已保存' });
     setTimeout(() => {
       if (get().saveToast === '已保存') set({ saveToast: null });
+    }, 2000);
+  },
+
+  restoreDraftFromHistory: (id) => {
+    const entry = get().draftHistory.find((e) => e.id === id);
+    if (!entry) return;
+    set({ draftText: entry.text });
+    const r = saveDraft(entry.text);
+    if (!r.ok) {
+      set({ storageError: `${STORAGE_FAIL_MSG} (${r.reason})` });
+      return;
+    }
+    set({ saveToast: '已恢复' });
+    setTimeout(() => {
+      if (get().saveToast === '已恢复') set({ saveToast: null });
     }, 2000);
   },
 

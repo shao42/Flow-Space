@@ -1,4 +1,5 @@
 import { useFlowStore } from '../store/flowStore';
+import { DraftHistoryMenu } from './DraftHistoryMenu';
 
 export function ChromeActions() {
   const saveNow = useFlowStore((s) => s.saveNow);
@@ -10,6 +11,7 @@ export function ChromeActions() {
       <button type="button" className="fs-chrome__btn" onClick={saveNow}>
         SAVE
       </button>
+      <DraftHistoryMenu />
       <button type="button" className="fs-chrome__btn" onClick={() => setReleaseModalOpen(true)}>
         RELEASE
       </button>

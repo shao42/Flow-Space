@@ -8,6 +8,8 @@ import {
   clearDraft,
   migrateSettings,
   defaultSettings,
+  loadDraftHistory,
+  pushDraftHistorySnapshot,
   type SettingsV1,
 } from './storage';
 
@@ -51,6 +53,24 @@ describe('storage', () => {
     expect(loadDraft()).toBe('hello');
     expect(clearDraft().ok).toBe(true);
     expect(loadDraft()).toBe('');
+  });
+
+  it('draft history keeps newest three snapshots', () => {
+    expect(loadDraftHistory()).toEqual([]);
+    expect(pushDraftHistorySnapshot('a').ok).toBe(true);
+    expect(pushDraftHistorySnapshot('b').ok).toBe(true);
+    expect(pushDraftHistorySnapshot('c').ok).toBe(true);
+    expect(pushDraftHistorySnapshot('d').ok).toBe(true);
+    const h = loadDraftHistory();
+    expect(h.map((x) => x.text)).toEqual(['d', 'c', 'b']);
+  });
+
+  it('draft history skips empty text and duplicate of latest', () => {
+    expect(pushDraftHistorySnapshot('x').ok).toBe(true);
+    expect(pushDraftHistorySnapshot('   ').ok).toBe(true);
+    expect(pushDraftHistorySnapshot('x').ok).toBe(true);
+    expect(loadDraftHistory().length).toBe(1);
+    expect(loadDraftHistory()[0].text).toBe('x');
   });
 
   it('migrateSettings from empty object uses defaults', () => {

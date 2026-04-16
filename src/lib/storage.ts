@@ -2,7 +2,16 @@ import type { SnowBackgroundId } from './snowBackgrounds';
 import { DEFAULT_SNOW_BACKGROUND, isSnowBackgroundId } from './snowBackgrounds';
 
 export const DRAFT_KEY = 'flowspace:v1:draft';
+export const DRAFT_HISTORY_KEY = 'flowspace:v1:draftHistory';
 export const SETTINGS_KEY = 'flowspace:v1:settings';
+
+export const DRAFT_HISTORY_MAX = 3;
+
+export interface DraftHistoryEntry {
+  id: string;
+  savedAt: number;
+  text: string;
+}
 
 export type AtmosphereMode = 'rain' | 'snow';
 
@@ -167,4 +176,51 @@ export function clearDraft(): { ok: true } | { ok: false; reason: string } {
   } catch {
     return { ok: false, reason: 'error' };
   }
+}
+
+function newHistoryId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+export function loadDraftHistory(): DraftHistoryEntry[] {
+  const raw = safeGetItem(DRAFT_HISTORY_KEY);
+  if (raw == null || raw === '') return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const out: DraftHistoryEntry[] = [];
+    for (const row of parsed) {
+      if (!row || typeof row !== 'object') continue;
+      const o = row as Record<string, unknown>;
+      if (typeof o.id !== 'string' || typeof o.savedAt !== 'number' || typeof o.text !== 'string') continue;
+      out.push({ id: o.id, savedAt: o.savedAt, text: o.text });
+    }
+    return out.slice(0, DRAFT_HISTORY_MAX);
+  } catch {
+    return [];
+  }
+}
+
+function saveDraftHistory(entries: DraftHistoryEntry[]): { ok: true } | { ok: false; reason: string } {
+  return safeSetItem(DRAFT_HISTORY_KEY, JSON.stringify(entries.slice(0, DRAFT_HISTORY_MAX)));
+}
+
+/** Record a snapshot after a successful manual save (newest first, max {@link DRAFT_HISTORY_MAX}). */
+export function pushDraftHistorySnapshot(text: string): { ok: true } | { ok: false; reason: string } {
+  if (text.trim().length === 0) {
+    return { ok: true };
+  }
+  const prev = loadDraftHistory();
+  if (prev[0]?.text === text) {
+    return { ok: true };
+  }
+  const entry: DraftHistoryEntry = {
+    id: newHistoryId(),
+    savedAt: Date.now(),
+    text,
+  };
+  return saveDraftHistory([entry, ...prev]);
 }
