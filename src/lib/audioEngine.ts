@@ -1,8 +1,6 @@
 import { computeNoiseAndMusicGains } from './gainMath';
 import type { AtmosphereMode } from './storage';
-
-/** File in `public/audio/` — URL-encoded when fetching (spaces, Unicode). */
-const BED_MUSIC_FILE = 'Merry Christmas Mr. Lawrence-坂本龍一.mp3';
+import { trackUrl } from './musicPlaylist';
 
 type MixerSlice = {
   noise01: number;
@@ -29,6 +27,10 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private rainFilter: BiquadFilterNode | null = null;
   private musicBase01 = 0;
+  /** Basename in `public/music-playlist/`. */
+  private bedFile: string | null = null;
+  private musicBufferByFile = new Map<string, AudioBuffer>();
+  private loadRequestId = 0;
 
   unlock(): void {
     if (this.unlocked) {
@@ -72,28 +74,90 @@ export class AudioEngine {
 
     void this.ctx.resume();
     this.unlocked = true;
-
-    void this.tryLoadMusic();
   }
 
-  private async tryLoadMusic(): Promise<void> {
-    if (!this.ctx || !this.musicGain) return;
-    try {
-      const url = `${import.meta.env.BASE_URL}audio/${encodeURIComponent(BED_MUSIC_FILE)}`;
-      const res = await fetch(url);
-      if (!res.ok) return;
-      const arr = await res.arrayBuffer();
-      const buf = await this.ctx.decodeAudioData(arr.slice(0));
-      this.musicNode = this.ctx.createBufferSource();
-      this.musicNode.buffer = buf;
-      this.musicNode.loop = true;
-      this.musicNode.connect(this.musicGain);
-      this.musicNode.start();
+  private stopMusicSource(): void {
+    if (this.musicNode) {
+      try {
+        this.musicNode.stop(0);
+      } catch {
+        /* */
+      }
+      try {
+        this.musicNode.disconnect();
+      } catch {
+        /* */
+      }
+      this.musicNode = null;
+    }
+  }
+
+  /**
+   * Set which file from `public/music-playlist/` to loop (basename).
+   * Pass `null` to stop bed music. Idempotent for same file while playing.
+   */
+  setBedMusicFile(basename: string | null): void {
+    if (this.bedFile === basename && this.musicNode) {
       this.musicBase01 = 1;
       this.apply(this.lastMode, this.lastMixer);
-    } catch {
-      this.musicBase01 = 0;
+      return;
     }
+    this.bedFile = basename;
+    void this.loadBedMusic();
+  }
+
+  private startBufferLoop(buffer: AudioBuffer): void {
+    if (!this.ctx || !this.musicGain) return;
+    this.stopMusicSource();
+    this.musicNode = this.ctx.createBufferSource();
+    this.musicNode.buffer = buffer;
+    this.musicNode.loop = true;
+    this.musicNode.connect(this.musicGain);
+    this.musicNode.start();
+    this.musicBase01 = 1;
+    this.apply(this.lastMode, this.lastMixer);
+  }
+
+  private async loadBedMusic(): Promise<void> {
+    if (!this.ctx || !this.musicGain || !this.unlocked) return;
+    const file = this.bedFile;
+    this.stopMusicSource();
+    this.musicBase01 = 0;
+    this.apply(this.lastMode, this.lastMixer);
+    if (!file) {
+      return;
+    }
+
+    const myReq = ++this.loadRequestId;
+    let buffer = this.musicBufferByFile.get(file);
+    if (!buffer) {
+      try {
+        const res = await fetch(trackUrl(file));
+        if (myReq !== this.loadRequestId || this.bedFile !== file) {
+          return;
+        }
+        if (!res.ok) {
+          this.apply(this.lastMode, this.lastMixer);
+          return;
+        }
+        const arr = await res.arrayBuffer();
+        if (myReq !== this.loadRequestId || this.bedFile !== file) {
+          return;
+        }
+        if (!this.ctx) return;
+        buffer = await this.ctx.decodeAudioData(arr.slice(0));
+        this.musicBufferByFile.set(file, buffer);
+      } catch {
+        this.apply(this.lastMode, this.lastMixer);
+        return;
+      }
+    }
+
+    if (myReq !== this.loadRequestId) return;
+    if (this.bedFile !== file) {
+      return;
+    }
+    this.startBufferLoop(buffer);
   }
 
   private lastMode: AtmosphereMode = 'rain';
@@ -139,6 +203,7 @@ export class AudioEngine {
     }
     this.ctx = null;
     this.unlocked = false;
+    this.musicBufferByFile.clear();
   }
 }
 

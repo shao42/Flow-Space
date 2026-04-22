@@ -35,6 +35,8 @@ export interface SettingsV1 {
     presetMinutes?: 15 | 25 | 45;
     customMinutes?: number;
   };
+  /** Id from `public/music-playlist/manifest.json`; empty = first track. */
+  musicPlaylistTrackId: string;
 }
 
 export function defaultSettings(): SettingsV1 {
@@ -54,6 +56,7 @@ export function defaultSettings(): SettingsV1 {
       kind: 'preset',
       presetMinutes: 25,
     },
+    musicPlaylistTrackId: '',
   };
 }
 
@@ -128,6 +131,9 @@ function parsePartialSettings(o: Record<string, unknown>): Partial<SettingsV1> {
       const c = Math.min(180, Math.max(5, Math.round(t.customMinutes)));
       out.timer = { kind: 'custom', customMinutes: c };
     }
+  }
+  if (typeof o.musicPlaylistTrackId === 'string' && o.musicPlaylistTrackId.length <= 200) {
+    out.musicPlaylistTrackId = o.musicPlaylistTrackId;
   }
   return out;
 }

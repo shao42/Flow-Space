@@ -24,6 +24,7 @@ export type FlowState = {
   fontIndex: number;
   mixer: SettingsV1['mixer'];
   timer: SettingsV1['timer'];
+  musicPlaylistTrackId: string;
   storageError: string | null;
   saveToast: string | null;
   releaseModalOpen: boolean;
@@ -38,6 +39,7 @@ export type FlowState = {
   cycleFont: () => void;
   setMixer: (partial: Partial<SettingsV1['mixer']>) => void;
   setTimer: (t: SettingsV1['timer']) => void;
+  setMusicPlaylistTrackId: (id: string) => void;
   clearStorageError: () => void;
   setReleaseModalOpen: (v: boolean) => void;
   hydrate: () => void;
@@ -59,6 +61,7 @@ function mergeSettingsIntoStore(s: SettingsV1): Pick<
   | 'fontIndex'
   | 'mixer'
   | 'timer'
+  | 'musicPlaylistTrackId'
 > {
   return {
     atmosphereMode: s.atmosphereMode,
@@ -67,6 +70,7 @@ function mergeSettingsIntoStore(s: SettingsV1): Pick<
     fontIndex: s.fontIndex,
     mixer: { ...s.mixer },
     timer: { ...s.timer },
+    musicPlaylistTrackId: s.musicPlaylistTrackId,
   };
 }
 
@@ -89,6 +93,7 @@ function buildSettingsFromState(s: FlowState): SettingsV1 {
     fontIndex: s.fontIndex,
     mixer: { ...s.mixer },
     timer: { ...s.timer },
+    musicPlaylistTrackId: s.musicPlaylistTrackId,
   };
 }
 
@@ -106,6 +111,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     musicBlend01: 0.5,
   },
   timer: { kind: 'preset', presetMinutes: 25 },
+  musicPlaylistTrackId: '',
   storageError: null,
   saveToast: null,
   releaseModalOpen: false,
@@ -147,6 +153,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   setTimer: (t) => {
     set({ timer: { ...t } });
+    get().persistSettings();
+  },
+
+  setMusicPlaylistTrackId: (id) => {
+    set({ musicPlaylistTrackId: id });
     get().persistSettings();
   },
 

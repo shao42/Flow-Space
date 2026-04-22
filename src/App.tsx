@@ -7,6 +7,7 @@ import { TopModeStrip } from './components/TopModeStrip';
 import { VibeMixer } from './components/VibeMixer';
 import { ZenTimer } from './components/ZenTimer';
 import { ChromeActions } from './components/ChromeActions';
+import { MusicPlaylistPanel } from './components/MusicPlaylistPanel';
 import { ConfirmReleaseModal } from './components/ConfirmReleaseModal';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
       <VibeMixer />
       <ZenTimer />
       <ChromeActions />
+      <MusicPlaylistPanel />
       <ConfirmReleaseModal />
     </div>
   );
