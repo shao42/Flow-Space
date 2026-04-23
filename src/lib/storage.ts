@@ -13,7 +13,7 @@ export interface DraftHistoryEntry {
   text: string;
 }
 
-export type AtmosphereMode = 'rain' | 'snow';
+export type AtmosphereMode = 'rain' | 'snow' | 'kk11';
 
 export type { SnowBackgroundId };
 
@@ -100,7 +100,7 @@ export function migrateSettings(raw: unknown): SettingsV1 {
 
 function parsePartialSettings(o: Record<string, unknown>): Partial<SettingsV1> {
   const out: Partial<SettingsV1> = {};
-  if (o.atmosphereMode === 'rain' || o.atmosphereMode === 'snow') {
+  if (o.atmosphereMode === 'rain' || o.atmosphereMode === 'snow' || o.atmosphereMode === 'kk11') {
     out.atmosphereMode = o.atmosphereMode;
   } else if (o.atmosphereMode === 'still') {
     out.atmosphereMode = 'rain';
