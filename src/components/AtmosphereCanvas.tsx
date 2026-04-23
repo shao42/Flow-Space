@@ -11,6 +11,7 @@ import {
   type SnowProgram,
 } from '../webgl/snow';
 import { snowBackgroundAssetName } from '../lib/snowBackgrounds';
+import { Kk11VideoBg } from './Kk11VideoBg';
 
 type Fallback = 'none' | 'motion' | 'webgl' | 'lost';
 
@@ -19,6 +20,7 @@ export function AtmosphereCanvas() {
   const mode = useFlowStore((s) => s.atmosphereMode);
   const intensity = useFlowStore((s) => s.mixer.intensity01);
   const snowBackgroundId = useFlowStore((s) => s.snowBackgroundId);
+  const isKk11 = mode === 'kk11';
   const modeRef = useRef(mode);
   const intensityRef = useRef(intensity);
   modeRef.current = mode;
@@ -98,12 +100,13 @@ export function AtmosphereCanvas() {
   );
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    if (reducedMotion) {
-      setFallback('motion');
+    if (isKk11 || reducedMotion) {
+      setFallback(isKk11 ? 'none' : 'motion');
       stopLoop();
+      if (glRef.current && snowBgTexRef.current) {
+        deleteSnowBackground(glRef.current, snowBgTexRef.current);
+      }
+      snowBgTexRef.current = null;
       glRef.current = null;
       rainRef.current = null;
       snowRef.current = null;
@@ -111,6 +114,9 @@ export function AtmosphereCanvas() {
         stopLoop();
       };
     }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
     const initGL = () => {
       const gl = createWebGL2(canvas);
@@ -179,10 +185,10 @@ export function AtmosphereCanvas() {
       rainRef.current = null;
       snowRef.current = null;
     };
-  }, [reducedMotion, stopLoop, resizeCanvas, scheduleResize, startRenderLoop]);
+  }, [isKk11, reducedMotion, stopLoop, resizeCanvas, scheduleResize, startRenderLoop]);
 
   useEffect(() => {
-    if (reducedMotion || fallback !== 'none') return;
+    if (isKk11 || reducedMotion || fallback !== 'none') return;
     const gl = glRef.current;
     if (!gl) return;
     let cancelled = false;
@@ -199,17 +205,18 @@ export function AtmosphereCanvas() {
     return () => {
       cancelled = true;
     };
-  }, [snowBackgroundId, reducedMotion, fallback]);
+  }, [snowBackgroundId, isKk11, reducedMotion, fallback]);
 
   useEffect(() => {
-    if (reducedMotion || fallback !== 'none') return;
+    if (isKk11 || reducedMotion || fallback !== 'none') return;
     scheduleResize();
-  }, [reducedMotion, fallback, scheduleResize]);
+  }, [isKk11, reducedMotion, fallback, scheduleResize]);
 
   return (
     <div className="fs-atmosphere-wrap">
-      <canvas ref={canvasRef} className="fs-atmosphere" aria-hidden />
-      {fallback !== 'none' && (
+      {isKk11 && <Kk11VideoBg intensity01={intensity} reducedMotion={reducedMotion} />}
+      {!isKk11 && <canvas ref={canvasRef} className="fs-atmosphere" aria-hidden />}
+      {!isKk11 && fallback !== 'none' && (
         <div className="fs-fallback-stack" aria-hidden>
           <img className="fs-fallback-bg" src="/fallback-bg.svg" alt="" />
           <div className="fs-fallback-vignette" />

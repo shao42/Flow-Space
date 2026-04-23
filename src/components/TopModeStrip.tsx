@@ -14,7 +14,7 @@ export function TopModeStrip() {
   const snowLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cycleMode = useCallback(() => {
-    const order = ['rain', 'snow'] as const;
+    const order = ['rain', 'snow', 'kk11'] as const;
     const i = order.indexOf(mode);
     setMode(order[i === -1 ? 0 : (i + 1) % order.length]);
   }, [mode, setMode]);
@@ -114,6 +114,16 @@ export function TopModeStrip() {
           </div>
         )}
       </div>
+      <span className="fs-mode-sep" aria-hidden>
+        |
+      </span>
+      <button
+        type="button"
+        className={mode === 'kk11' ? 'fs-mode fs-mode--active' : 'fs-mode'}
+        onClick={() => setMode('kk11')}
+      >
+        KK11
+      </button>
     </div>
   );
 }

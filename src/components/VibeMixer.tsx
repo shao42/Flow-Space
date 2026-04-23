@@ -52,7 +52,8 @@ export function VibeMixer() {
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [open]);
 
-  const intensityLabel = mode === 'rain' ? 'Rain intensity' : 'Snow density';
+  const intensityLabel =
+    mode === 'rain' ? 'Rain intensity' : mode === 'snow' ? 'Snow density' : 'Video brightness';
 
   return (
     <>
@@ -102,6 +103,14 @@ export function VibeMixer() {
               onClick={() => setMode('snow')}
             >
               Snow
+            </button>
+            <span className="fs-mode-sep">|</span>
+            <button
+              type="button"
+              className={mode === 'kk11' ? 'fs-mode fs-mode--active' : 'fs-mode'}
+              onClick={() => setMode('kk11')}
+            >
+              KK11
             </button>
           </div>
 
