@@ -15,6 +15,9 @@ function fillNoiseBuffer(buffer: AudioBuffer): void {
   }
 }
 
+/** Dispatched the first time the audio graph is created (user gesture has unlocked the context). */
+export const FLOW_SPACE_AUDIO_UNLOCK = 'flow-space-audio-unlock';
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private unlocked = false;
@@ -47,6 +50,7 @@ export class AudioEngine {
     const noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
     fillNoiseBuffer(noiseBuf);
     this.noiseGain = this.ctx.createGain();
+    this.noiseGain.gain.value = 0;
     this.noiseNode = this.ctx.createBufferSource();
     this.noiseNode.buffer = noiseBuf;
     this.noiseNode.loop = true;
@@ -64,9 +68,11 @@ export class AudioEngine {
     this.rainNode.loop = true;
     this.rainNode.connect(this.rainFilter);
     this.rainFilter.connect(this.rainGain);
+    this.rainGain.gain.value = 0;
     this.rainGain.connect(this.master);
 
     this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0;
     this.musicGain.connect(this.master);
 
     this.noiseNode.start();
@@ -74,6 +80,10 @@ export class AudioEngine {
 
     void this.ctx.resume();
     this.unlocked = true;
+    this.apply(this.lastMode, this.lastMixer);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(FLOW_SPACE_AUDIO_UNLOCK));
+    }
   }
 
   private stopMusicSource(): void {
