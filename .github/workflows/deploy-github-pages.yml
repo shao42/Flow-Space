@@ -39,6 +39,7 @@ jobs:
           # Project site: https://<user>.github.io/<repo>/
           # User/org site (repo named <user>.github.io): use VITE_BASE_URL=/
           VITE_BASE_URL: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
+          VITE_MAILBOX_API_URL: ${{ vars.MAILBOX_API_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

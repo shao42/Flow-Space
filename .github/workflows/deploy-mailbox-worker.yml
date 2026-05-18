@@ -1,0 +1,84 @@
+# Deploy Flow Space Mailbox API (Cloudflare Worker + D1).
+#
+# Prerequisites (one-time):
+# 1. Cloudflare: wrangler d1 create flow-space-mailbox → set database_id in workers/mailbox/wrangler.toml
+# 2. wrangler secret put SESSION_JWT_SECRET (in workers/mailbox)
+# 3. GitHub repo secrets:
+#    - CLOUDFLARE_API_TOKEN  (Workers + D1 edit)
+#    - CLOUDFLARE_ACCOUNT_ID
+# 4. GitHub repo variables (recommended):
+#    - MAILBOX_CORS_ORIGINS  e.g. https://<user>.github.io,http://localhost:5173
+#    - MAILBOX_API_URL       Worker URL for frontend builds (Pages workflow)
+
+name: Deploy Mailbox Worker
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'workers/mailbox/**'
+      - '.github/workflows/deploy-mailbox-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mailbox-worker
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/mailbox
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: workers/mailbox/package.json
+
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Resolve CORS origins
+        id: cors
+        run: |
+          if [ -n "${{ vars.MAILBOX_CORS_ORIGINS }}" ]; then
+            echo "value=${{ vars.MAILBOX_CORS_ORIGINS }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=http://localhost:5173,http://127.0.0.1:5173" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply D1 schema (remote)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '3'
+          command: d1 execute flow-space-mailbox --remote --file=./schema.sql
+          workingDirectory: workers/mailbox
+
+      - name: Deploy Worker
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '3'
+          command: deploy --var CORS_ORIGINS:${{ steps.cors.outputs.value }}
+          workingDirectory: workers/mailbox
+
+      - name: Deployment summary
+        run: |
+          echo "## Mailbox Worker" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ steps.deploy.outputs.deployment-url }}" ]; then
+            echo "URL: ${{ steps.deploy.outputs.deployment-url }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "Set repo variable **MAILBOX_API_URL** to this URL for GitHub Pages builds." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Deployed. Set **MAILBOX_API_URL** to https://flow-space-mailbox.<subdomain>.workers.dev" >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "mailbox:dev": "npm run dev --prefix workers/mailbox",
+    "mailbox:db:local": "npm run db:migrate:local --prefix workers/mailbox"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",

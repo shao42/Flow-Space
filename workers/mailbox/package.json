@@ -1,0 +1,19 @@
+{
+  "name": "flow-space-mailbox-api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 execute flow-space-mailbox --local --file=./schema.sql",
+    "db:migrate:remote": "wrangler d1 execute flow-space-mailbox --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "~5.6.2",
+    "wrangler": "^3.109.0"
+  },
+  "optionalDependencies": {
+    "@cloudflare/workerd-windows-64": "1.20250718.0"
+  }
+}

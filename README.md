@@ -17,6 +17,7 @@ Open `http://localhost:5173`.
 - `npm run dev` — Vite dev server  
 - `npm run build` — production build  
 - `npm run test` — Vitest  
+- `npm run mailbox:dev` — local Mailbox API (Wrangler on port 8787; run `npm run mailbox:db:local` once first)  
 
 ## Deploy (GitHub Pages)
 
@@ -43,6 +44,7 @@ VITE_BASE_URL=/<your-repo-name>/ npm run build && npm run preview
 
 - Design: `docs/superpowers/specs/2026-03-23-flow-space-design.md`  
 - Plan: `docs/superpowers/plans/2026-03-23-flow-space.md`  
+- **Mailbox (WIP):** [requirements](./docs/mailbox/requirements-decisions.md) · [spec](./docs/mailbox/2026-05-17-mailbox-spec.md) · [architecture](./docs/mailbox/architecture-spike.md)  
 
 ## Atmosphere
 
@@ -55,6 +57,16 @@ Only **Rain** and **Snow** (with three optional snow background images). There i
 | **Alt+M** | Toggle Rain ↔ Snow (works while typing in the editor) |
 | **Alt+F** | Cycle font (sans / serif / mono) |
 | **Alt+V** | Toggle Vibe Mixer panel |
+| **Alt+L** | Toggle Mailbox panel |
+
+## Mailbox (dev)
+
+1. `cd workers/mailbox && npm install` (once)  
+2. `npm run mailbox:db:local` from repo root (once)  
+3. `npm run mailbox:dev` in one terminal; `npm run dev` in another  
+4. Open MAIL → 新建信箱 → copy link → second browser/profile → paste link or open URL  
+
+Production: push to `main` (or run **Deploy Mailbox Worker** workflow) after configuring Cloudflare + GitHub secrets — see [`workers/mailbox/README.md`](workers/mailbox/README.md). Set repo variable `MAILBOX_API_URL` to the Worker URL for Pages builds.
 
 ## Manual tests (Task 19)
 

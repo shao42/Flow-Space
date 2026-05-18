@@ -9,9 +9,12 @@ import { ZenTimer } from './components/ZenTimer';
 import { ChromeActions } from './components/ChromeActions';
 import { MusicPlaylistPanel } from './components/MusicPlaylistPanel';
 import { ConfirmReleaseModal } from './components/ConfirmReleaseModal';
+import { MailboxPanel } from './components/MailboxPanel';
+import { useMailboxInit } from './hooks/useMailboxInit';
 
 function App() {
   useAudioSync();
+  useMailboxInit();
   const storageError = useFlowStore((s) => s.storageError);
   const saveToast = useFlowStore((s) => s.saveToast);
   const clearStorageError = useFlowStore((s) => s.clearStorageError);
@@ -45,6 +48,7 @@ function App() {
       <ChromeActions />
       <MusicPlaylistPanel />
       <ConfirmReleaseModal />
+      <MailboxPanel />
     </div>
   );
 }

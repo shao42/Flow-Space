@@ -4,3 +4,6 @@ dist
 .DS_Store
 coverage
 .vite
+.wrangler
+workers/mailbox/.wrangler
+workers/mailbox/node_modules
