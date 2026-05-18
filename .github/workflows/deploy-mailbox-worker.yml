@@ -1,14 +1,14 @@
 # Deploy Flow Space Mailbox API (Cloudflare Worker + D1).
 #
-# Prerequisites (one-time):
-# 1. Cloudflare: wrangler d1 create flow-space-mailbox → set database_id in workers/mailbox/wrangler.toml
-# 2. wrangler secret put SESSION_JWT_SECRET (in workers/mailbox)
-# 3. GitHub repo secrets:
-#    - CLOUDFLARE_API_TOKEN  (Workers + D1 edit)
-#    - CLOUDFLARE_ACCOUNT_ID
-# 4. GitHub repo variables (recommended):
-#    - MAILBOX_CORS_ORIGINS  e.g. https://<user>.github.io,http://localhost:5173
-#    - MAILBOX_API_URL       Worker URL for frontend builds (Pages workflow)
+# Required GitHub repository secrets:
+#   CLOUDFLARE_API_TOKEN  — API token with Account / Workers Scripts / D1 Edit
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare account ID
+#
+# Recommended secrets / variables:
+#   SESSION_JWT_SECRET (secret) — production JWT signing key (set once via wrangler or CI)
+#   MAILBOX_CORS_ORIGINS (variable) — e.g. https://shao42.github.io,http://localhost:5173
+#
+# One-time: wrangler d1 create flow-space-mailbox → database_id in workers/mailbox/wrangler.toml
 
 name: Deploy Mailbox Worker
 
@@ -30,20 +30,33 @@ jobs:
     defaults:
       run:
         working-directory: workers/mailbox
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify Cloudflare secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Missing repository secret CLOUDFLARE_API_TOKEN. Create an API token with Workers + D1 permissions."
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Missing repository secret CLOUDFLARE_ACCOUNT_ID."
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: workers/mailbox/package.json
+          cache-dependency-path: workers/mailbox/package-lock.json
 
       - name: Install
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+        run: npm ci
 
       - name: Resolve CORS origins
         id: cors
@@ -51,34 +64,29 @@ jobs:
           if [ -n "${{ vars.MAILBOX_CORS_ORIGINS }}" ]; then
             echo "value=${{ vars.MAILBOX_CORS_ORIGINS }}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=http://localhost:5173,http://127.0.0.1:5173" >> "$GITHUB_OUTPUT"
+            echo "value=https://shao42.github.io,http://localhost:5173,http://127.0.0.1:5173" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Apply D1 schema (remote)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: '3'
-          command: d1 execute flow-space-mailbox --remote --file=./schema.sql
-          workingDirectory: workers/mailbox
+        run: npx wrangler@3.114.17 d1 execute flow-space-mailbox --remote --file=./schema.sql
+
+      - name: Set SESSION_JWT_SECRET (if configured)
+        if: ${{ secrets.SESSION_JWT_SECRET != '' }}
+        run: printf '%s' "$SESSION_JWT_SECRET" | npx wrangler@3.114.17 secret put SESSION_JWT_SECRET
+        env:
+          SESSION_JWT_SECRET: ${{ secrets.SESSION_JWT_SECRET }}
 
       - name: Deploy Worker
         id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: '3'
-          command: deploy --var CORS_ORIGINS:${{ steps.cors.outputs.value }}
-          workingDirectory: workers/mailbox
+        run: |
+          CORS="${{ steps.cors.outputs.value }}"
+          npx wrangler@3.114.17 deploy --var "CORS_ORIGINS:${CORS}"
 
       - name: Deployment summary
         run: |
           echo "## Mailbox Worker" >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "${{ steps.deploy.outputs.deployment-url }}" ]; then
-            echo "URL: ${{ steps.deploy.outputs.deployment-url }}" >> "$GITHUB_STEP_SUMMARY"
-            echo "Set repo variable **MAILBOX_API_URL** to this URL for GitHub Pages builds." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "Deployed. Set **MAILBOX_API_URL** to https://flow-space-mailbox.<subdomain>.workers.dev" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "Deployed from commit \`${{ github.sha }}\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Set repository variable **MAILBOX_API_URL** to your Worker URL (e.g. \`https://flow-space-mailbox.<account>.workers.dev\`) for GitHub Pages builds." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "CORS origins: \`${{ steps.cors.outputs.value }}\`" >> "$GITHUB_STEP_SUMMARY"

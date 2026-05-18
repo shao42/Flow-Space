@@ -22,12 +22,15 @@ Workflow: [`.github/workflows/deploy-mailbox-worker.yml`](../../.github/workflow
 
 **One-time setup**
 
-1. `wrangler d1 create flow-space-mailbox` → copy `database_id` into `wrangler.toml`.
+1. `wrangler d1 create flow-space-mailbox` → copy `database_id` into `wrangler.toml` (if not already set).
 2. `wrangler secret put SESSION_JWT_SECRET` in `workers/mailbox` (production JWT signing key).
-3. GitHub **Secrets**: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
+3. GitHub repository **Secrets** (required for CI — workflow fails fast if missing):
+   - `CLOUDFLARE_API_TOKEN` — API token with **Workers Scripts Edit** and **D1 Edit**
+   - `CLOUDFLARE_ACCOUNT_ID` — from Cloudflare dashboard → Workers
+   - `SESSION_JWT_SECRET` (optional) — if set, CI runs `wrangler secret put` on each deploy
 4. GitHub **Variables**:
-   - `MAILBOX_CORS_ORIGINS` — e.g. `https://<user>.github.io,http://localhost:5173`
-   - `MAILBOX_API_URL` — Worker URL after first deploy
+   - `MAILBOX_CORS_ORIGINS` — e.g. `https://shao42.github.io,http://localhost:5173` (no path; comma-separated)
+   - `MAILBOX_API_URL` — Worker URL after first deploy (for Pages frontend build)
 
 The workflow runs remote D1 migrations (`schema.sql`) then `wrangler deploy`.
 

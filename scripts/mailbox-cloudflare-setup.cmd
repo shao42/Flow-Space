@@ -26,11 +26,11 @@ if errorlevel 1 exit /b 1
 
 echo.
 echo === Set production secret ===
-call npx.cmd wrangler secret put ROOM_SECRET_PEPPER
+call npx.cmd wrangler secret put SESSION_JWT_SECRET
 
 echo.
 echo === Deploy (edit CORS URL below if needed) ===
-call npx.cmd wrangler deploy --var "CORS_ORIGINS:http://localhost:5173"
+call npx.cmd wrangler deploy --var "CORS_ORIGINS:https://shao42.github.io,http://localhost:5173"
 echo.
 echo Done. Set GitHub variable MAILBOX_API_URL to the workers.dev URL shown above.
 pause

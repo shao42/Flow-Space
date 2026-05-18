@@ -64,9 +64,15 @@ Only **Rain** and **Snow** (with three optional snow background images). There i
 1. `cd workers/mailbox && npm install` (once)  
 2. `npm run mailbox:db:local` from repo root (once)  
 3. `npm run mailbox:dev` in one terminal; `npm run dev` in another  
-4. Open MAIL → 新建信箱 → copy link → second browser/profile → paste link or open URL  
+4. Open MAIL → register / login → compose to another `@username`
 
-Production: push to `main` (or run **Deploy Mailbox Worker** workflow) after configuring Cloudflare + GitHub secrets — see [`workers/mailbox/README.md`](workers/mailbox/README.md). Set repo variable `MAILBOX_API_URL` to the Worker URL for Pages builds.
+**Production deploy** (workflow *Deploy Mailbox Worker*):
+
+1. GitHub **Secrets**: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; optional `SESSION_JWT_SECRET`  
+2. GitHub **Variables**: `MAILBOX_CORS_ORIGINS` (e.g. `https://shao42.github.io,http://localhost:5173`), `MAILBOX_API_URL` (Worker URL for Pages build)  
+3. Push to `main` or re-run the workflow  
+
+See [`workers/mailbox/README.md`](workers/mailbox/README.md).
 
 ## Manual tests (Task 19)
 
