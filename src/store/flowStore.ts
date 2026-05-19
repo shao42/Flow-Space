@@ -261,9 +261,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       const snapshots = await fetchCloudHistory();
       set({ cloudHistory: snapshots, cloudHistoryLoading: false });
     } catch (e) {
-      const msg =
+      let msg =
         e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '加载云端历史失败';
-      set({ cloudHistoryLoading: false, cloudHistoryError: msg });
+      if (e instanceof MailboxApiError && e.code === 'NOT_FOUND') {
+        msg = '云端历史接口未就绪，请确认已部署最新 Mailbox Worker（含 draft_snapshots 表）';
+      }
+      set({ cloudHistory: [], cloudHistoryLoading: false, cloudHistoryError: msg });
     }
   },
 
@@ -299,10 +302,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         set({ saveToast: '同步完成（部分条目已跳过）' });
       }
     } catch (e) {
-      const msg =
+      let msg =
         e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '同步失败';
+      if (e instanceof MailboxApiError && e.code === 'NOT_FOUND') {
+        msg = '云端历史接口未就绪，请部署最新 Mailbox Worker 后再试';
+      }
       set({ historySyncing: false, cloudHistoryError: msg });
-      if (e instanceof MailboxApiError && e.code === 'LIMIT_REACHED') {
+      if (e instanceof MailboxApiError && (e.code === 'LIMIT_REACHED' || e.code === 'NOT_FOUND')) {
         set({ saveToast: msg });
       }
     }

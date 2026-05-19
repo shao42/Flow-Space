@@ -6,7 +6,7 @@ import { EditorDeck } from './components/EditorDeck';
 import { TopModeStrip } from './components/TopModeStrip';
 import { VibeMixer } from './components/VibeMixer';
 import { ZenTimer } from './components/ZenTimer';
-import { ChromeActions } from './components/ChromeActions';
+import { DraftHistorySidebarPortal } from './components/DraftHistorySidebar';
 import { MusicPlaylistPanel } from './components/MusicPlaylistPanel';
 import { ConfirmReleaseModal } from './components/ConfirmReleaseModal';
 import { MailboxPanel } from './components/MailboxPanel';
@@ -19,14 +19,12 @@ function App() {
   const saveToast = useFlowStore((s) => s.saveToast);
   const clearStorageError = useFlowStore((s) => s.clearStorageError);
   const hydrate = useFlowStore((s) => s.hydrate);
-  const historyPanelOpen = useFlowStore((s) => s.historyPanelOpen);
-
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   return (
-    <div className={`fs-root${historyPanelOpen ? ' fs-root--history-open' : ''}`}>
+    <div className="fs-root">
       {storageError && (
         <div className="fs-storage-banner" role="status">
           <span>{storageError}</span>
@@ -46,7 +44,7 @@ function App() {
       <EditorDeck />
       <VibeMixer />
       <ZenTimer />
-      <ChromeActions />
+      <DraftHistorySidebarPortal />
       <MusicPlaylistPanel />
       <ConfirmReleaseModal />
       <MailboxPanel />
