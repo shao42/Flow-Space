@@ -71,10 +71,14 @@ jobs:
         run: npx wrangler@3.114.17 d1 execute flow-space-mailbox --remote --file=./schema.sql
 
       - name: Set SESSION_JWT_SECRET (if configured)
-        if: ${{ secrets.SESSION_JWT_SECRET != '' }}
-        run: printf '%s' "$SESSION_JWT_SECRET" | npx wrangler@3.114.17 secret put SESSION_JWT_SECRET
         env:
           SESSION_JWT_SECRET: ${{ secrets.SESSION_JWT_SECRET }}
+        run: |
+          if [ -z "$SESSION_JWT_SECRET" ]; then
+            echo "SESSION_JWT_SECRET not set in repository secrets — skipping wrangler secret put."
+            exit 0
+          fi
+          printf '%s' "$SESSION_JWT_SECRET" | npx wrangler@3.114.17 secret put SESSION_JWT_SECRET
 
       - name: Deploy Worker
         id: deploy
