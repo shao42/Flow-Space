@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS letters (
 CREATE INDEX IF NOT EXISTS idx_letters_inbox ON letters(to_user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_letters_sent ON letters(from_user_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS draft_snapshots (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  text TEXT NOT NULL,
+  saved_at TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_draft_snapshots_user ON draft_snapshots(user_id, saved_at DESC);
+
 CREATE TABLE IF NOT EXISTS rate_buckets (
   bucket_key TEXT PRIMARY KEY,
   count INTEGER NOT NULL DEFAULT 0,

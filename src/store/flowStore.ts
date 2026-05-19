@@ -14,10 +14,22 @@ import {
 } from '../lib/storage';
 import { DEFAULT_SNOW_BACKGROUND } from '../lib/snowBackgrounds';
 import { buildExportFilename, downloadTextFile } from '../lib/exportDraft';
+import {
+  fetchCloudHistory,
+  fetchCloudHistoryEntry,
+  uploadLocalSnapshots,
+} from '../lib/draftHistoryApi';
+import { loadMailboxToken } from '../lib/mailboxSession';
+import { MailboxApiError, type CloudHistoryListItem } from '../lib/mailboxTypes';
 
 export type FlowState = {
   draftText: string;
   draftHistory: DraftHistoryEntry[];
+  historyPanelOpen: boolean;
+  cloudHistory: CloudHistoryListItem[];
+  cloudHistoryLoading: boolean;
+  cloudHistoryError: string | null;
+  historySyncing: boolean;
   atmosphereMode: AtmosphereMode;
   snowBackgroundId: SnowBackgroundId;
   alwaysShowControls: boolean;
@@ -46,6 +58,12 @@ export type FlowState = {
   persistSettings: () => void;
   saveNow: () => void;
   restoreDraftFromHistory: (id: string) => void;
+  toggleHistoryPanel: () => void;
+  setHistoryPanelOpen: (open: boolean) => void;
+  loadCloudHistory: () => Promise<void>;
+  clearCloudHistory: () => void;
+  syncLocalToCloud: () => Promise<void>;
+  restoreFromCloud: (id: string) => Promise<void>;
   confirmRelease: () => void;
   exportDraft: () => void;
   bumpDeckPulse: () => void;
@@ -100,6 +118,11 @@ function buildSettingsFromState(s: FlowState): SettingsV1 {
 export const useFlowStore = create<FlowState>((set, get) => ({
   draftText: '',
   draftHistory: [],
+  historyPanelOpen: false,
+  cloudHistory: [],
+  cloudHistoryLoading: false,
+  cloudHistoryError: null,
+  historySyncing: false,
   atmosphereMode: 'rain',
   snowBackgroundId: DEFAULT_SNOW_BACKGROUND,
   alwaysShowControls: false,
@@ -211,10 +234,105 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       set({ storageError: `${STORAGE_FAIL_MSG} (${r.reason})` });
       return;
     }
-    set({ saveToast: '已恢复' });
+    set({ saveToast: '已恢复', historyPanelOpen: false });
     setTimeout(() => {
       if (get().saveToast === '已恢复') set({ saveToast: null });
     }, 2000);
+  },
+
+  toggleHistoryPanel: () => {
+    const next = !get().historyPanelOpen;
+    set({ historyPanelOpen: next });
+    if (next) void get().loadCloudHistory();
+  },
+
+  setHistoryPanelOpen: (open) => {
+    set({ historyPanelOpen: open });
+    if (open) void get().loadCloudHistory();
+  },
+
+  loadCloudHistory: async () => {
+    if (!loadMailboxToken()) {
+      set({ cloudHistory: [], cloudHistoryError: null, cloudHistoryLoading: false });
+      return;
+    }
+    set({ cloudHistoryLoading: true, cloudHistoryError: null });
+    try {
+      const snapshots = await fetchCloudHistory();
+      set({ cloudHistory: snapshots, cloudHistoryLoading: false });
+    } catch (e) {
+      const msg =
+        e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '加载云端历史失败';
+      set({ cloudHistoryLoading: false, cloudHistoryError: msg });
+    }
+  },
+
+  clearCloudHistory: () => {
+    set({ cloudHistory: [], cloudHistoryError: null, cloudHistoryLoading: false });
+  },
+
+  syncLocalToCloud: async () => {
+    if (!loadMailboxToken()) {
+      set({ saveToast: '请先登录信箱' });
+      setTimeout(() => {
+        if (get().saveToast === '请先登录信箱') set({ saveToast: null });
+      }, 2500);
+      return;
+    }
+    const local = loadDraftHistory();
+    if (local.length === 0) {
+      set({ saveToast: '没有可同步的本地记录' });
+      setTimeout(() => {
+        if (get().saveToast === '没有可同步的本地记录') set({ saveToast: null });
+      }, 2500);
+      return;
+    }
+    set({ historySyncing: true, cloudHistoryError: null });
+    try {
+      const { uploaded, skipped } = await uploadLocalSnapshots(local);
+      await get().loadCloudHistory();
+      set({
+        historySyncing: false,
+        saveToast: uploaded > 0 ? `已同步 ${uploaded} 条到云端` : '本地记录已在云端',
+      });
+      if (skipped > 0 && uploaded === 0) {
+        set({ saveToast: '同步完成（部分条目已跳过）' });
+      }
+    } catch (e) {
+      const msg =
+        e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '同步失败';
+      set({ historySyncing: false, cloudHistoryError: msg });
+      if (e instanceof MailboxApiError && e.code === 'LIMIT_REACHED') {
+        set({ saveToast: msg });
+      }
+    }
+    setTimeout(() => {
+      const t = get().saveToast;
+      if (t?.includes('同步') || t?.includes('云端') || t?.includes('登录')) {
+        set({ saveToast: null });
+      }
+    }, 2500);
+  },
+
+  restoreFromCloud: async (id: string) => {
+    set({ cloudHistoryLoading: true, cloudHistoryError: null });
+    try {
+      const snapshot = await fetchCloudHistoryEntry(id);
+      set({ draftText: snapshot.text, cloudHistoryLoading: false, historyPanelOpen: false });
+      const r = saveDraft(snapshot.text);
+      if (!r.ok) {
+        set({ storageError: `${STORAGE_FAIL_MSG} (${r.reason})` });
+        return;
+      }
+      set({ saveToast: '已恢复' });
+      setTimeout(() => {
+        if (get().saveToast === '已恢复') set({ saveToast: null });
+      }, 2000);
+    } catch (e) {
+      const msg =
+        e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '恢复失败';
+      set({ cloudHistoryLoading: false, cloudHistoryError: msg });
+    }
   },
 
   confirmRelease: () => {

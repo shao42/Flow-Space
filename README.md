@@ -76,6 +76,8 @@ See [`workers/mailbox/README.md`](workers/mailbox/README.md).
 
 **Netlify** (e.g. `immersive-flow-space.netlify.app`): use [`netlify.toml`](netlify.toml) to proxy `/api/*` to the Worker so phones never hit `*.workers.dev`. In Netlify env: set `VITE_BASE_URL=/`, **remove** `VITE_MAILBOX_API_URL` (or leave empty), then redeploy. GitHub Pages still uses `MAILBOX_API_URL` → `VITE_MAILBOX_API_URL` for cross-origin Worker calls.
 
+**Draft history (cloud):** After mailbox login, open **History** (left sidebar) → **同步本地记录到云端** to upload local SAVE snapshots; cloud list syncs across devices. Requires Worker deploy with latest `schema.sql` ( `draft_snapshots` table).
+
 ## Manual tests (Task 19)
 
 - Reload: draft, mode, mixer, and timer **settings** (not running countdown) restore from LocalStorage.  

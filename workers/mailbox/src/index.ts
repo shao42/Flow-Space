@@ -6,6 +6,7 @@ import {
   verifyJwt,
   verifyPassword,
 } from './auth';
+import { parseSavedAt, previewSnapshotText } from './historyUtils';
 
 export interface Env {
   DB: D1Database;
@@ -14,6 +15,9 @@ export interface Env {
 }
 
 const MAX_BODY = 20000;
+const MAX_SNAPSHOT_BODY = 20000;
+const MAX_SNAPSHOTS_PER_USER = 50;
+const MAX_HISTORY_UPLOAD_PER_MINUTE = 10;
 const MAX_MAIL_PER_MINUTE = 30;
 const MAX_LOGIN_PER_IP_PER_MINUTE = 10;
 const MAX_REGISTER_PER_IP_PER_HOUR = 5;
@@ -36,6 +40,14 @@ type LetterRow = {
   read_at: string | null;
   deleted_by_sender_at: string | null;
   deleted_by_recipient_at: string | null;
+  created_at: string;
+};
+
+type SnapshotRow = {
+  id: string;
+  user_id: string;
+  text: string;
+  saved_at: string;
   created_at: string;
 };
 
@@ -83,6 +95,18 @@ export default {
       }
       if (path === '/api/mail' && request.method === 'POST') {
         return withCors(await handleSendMail(request, env, userId), cors);
+      }
+
+      if (path === '/api/history' && request.method === 'GET') {
+        return withCors(await handleListHistory(env, userId), cors);
+      }
+      if (path === '/api/history' && request.method === 'POST') {
+        return withCors(await handleCreateHistory(request, env, userId), cors);
+      }
+
+      const historyMatch = path.match(/^\/api\/history\/([^/]+)$/);
+      if (historyMatch && request.method === 'GET') {
+        return withCors(await handleGetHistory(env, userId, historyMatch[1]), cors);
       }
 
       const mailMatch = path.match(/^\/api\/mail\/([^/]+)$/);
@@ -462,6 +486,92 @@ async function handleGetLetter(env: Env, userId: string, letterId: string): Prom
   if (!fromUser || !toUser) return json({ error: 'NOT_FOUND' }, 404);
 
   return json({ letter: rowToLetter(row, fromUser, toUser) });
+}
+
+function snapshotListItem(row: SnapshotRow) {
+  return {
+    id: row.id,
+    savedAt: row.saved_at,
+    preview: previewSnapshotText(row.text),
+  };
+}
+
+async function handleListHistory(env: Env, userId: string): Promise<Response> {
+  const result = await env.DB.prepare(
+    `SELECT id, user_id, text, saved_at, created_at FROM draft_snapshots
+     WHERE user_id = ?
+     ORDER BY saved_at DESC
+     LIMIT 100`
+  )
+    .bind(userId)
+    .all<SnapshotRow>();
+
+  return json({ snapshots: (result.results ?? []).map(snapshotListItem) });
+}
+
+async function handleGetHistory(env: Env, userId: string, snapshotId: string): Promise<Response> {
+  const row = await env.DB.prepare('SELECT * FROM draft_snapshots WHERE id = ? AND user_id = ?')
+    .bind(snapshotId, userId)
+    .first<SnapshotRow>();
+  if (!row) return json({ error: 'NOT_FOUND' }, 404);
+  return json({
+    snapshot: {
+      id: row.id,
+      text: row.text,
+      savedAt: row.saved_at,
+    },
+  });
+}
+
+async function handleCreateHistory(request: Request, env: Env, userId: string): Promise<Response> {
+  const ok = await checkRateLimit(env, `history:upload:${userId}`, MAX_HISTORY_UPLOAD_PER_MINUTE);
+  if (!ok) return json({ error: 'RATE_LIMIT', message: '同步过于频繁，请稍后再试' }, 429);
+
+  const body = await readJson<{ text?: string; savedAt?: unknown }>(request);
+  if (!body) return json({ error: 'BAD_REQUEST' }, 400);
+
+  const text = typeof body.text === 'string' ? body.text : '';
+  if (text.trim().length === 0) {
+    return json({ error: 'BAD_REQUEST', message: '内容不能为空' }, 400);
+  }
+  if (text.length > MAX_SNAPSHOT_BODY) {
+    return json({ error: 'BAD_REQUEST', message: '内容长度须在 1–20000 字符' }, 400);
+  }
+
+  const savedAt = parseSavedAt(body.savedAt) ?? new Date().toISOString();
+
+  const existing = await env.DB.prepare(
+    'SELECT * FROM draft_snapshots WHERE user_id = ? AND saved_at = ? AND text = ?'
+  )
+    .bind(userId, savedAt, text)
+    .first<SnapshotRow>();
+  if (existing) {
+    return json({ snapshot: snapshotListItem(existing), deduped: true });
+  }
+
+  const countRow = await env.DB.prepare('SELECT COUNT(*) as c FROM draft_snapshots WHERE user_id = ?')
+    .bind(userId)
+    .first<{ c: number }>();
+  if ((countRow?.c ?? 0) >= MAX_SNAPSHOTS_PER_USER) {
+    return json(
+      { error: 'LIMIT_REACHED', message: `云端历史已达上限（${MAX_SNAPSHOTS_PER_USER} 条）` },
+      400
+    );
+  }
+
+  const id = randomId();
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    'INSERT INTO draft_snapshots (id, user_id, text, saved_at, created_at) VALUES (?, ?, ?, ?, ?)'
+  )
+    .bind(id, userId, text, savedAt, now)
+    .run();
+
+  const row = await env.DB.prepare('SELECT * FROM draft_snapshots WHERE id = ?')
+    .bind(id)
+    .first<SnapshotRow>();
+  if (!row) return json({ error: 'INTERNAL' }, 500);
+  return json({ snapshot: snapshotListItem(row) });
 }
 
 async function handleDeleteLetter(env: Env, userId: string, letterId: string): Promise<Response> {

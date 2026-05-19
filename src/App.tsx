@@ -19,13 +19,14 @@ function App() {
   const saveToast = useFlowStore((s) => s.saveToast);
   const clearStorageError = useFlowStore((s) => s.clearStorageError);
   const hydrate = useFlowStore((s) => s.hydrate);
+  const historyPanelOpen = useFlowStore((s) => s.historyPanelOpen);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   return (
-    <div className="fs-root">
+    <div className={`fs-root${historyPanelOpen ? ' fs-root--history-open' : ''}`}>
       {storageError && (
         <div className="fs-storage-banner" role="status">
           <span>{storageError}</span>

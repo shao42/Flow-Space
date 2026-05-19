@@ -38,12 +38,14 @@ function mapErrorCode(error: string | undefined, status: number): import('./mail
       return 'BAD_REQUEST';
     case 'NOT_FOUND':
       return 'NOT_FOUND';
+    case 'LIMIT_REACHED':
+      return 'LIMIT_REACHED';
     default:
       return status >= 500 ? 'NETWORK' : 'UNKNOWN';
   }
 }
 
-async function request<T>(
+export async function mailboxRequest<T>(
   path: string,
   init?: RequestInit & { json?: unknown; auth?: boolean }
 ): Promise<T> {
@@ -97,7 +99,7 @@ export async function register(
   password: string,
   displayName?: string
 ): Promise<{ token: string; user: MailboxUser }> {
-  const data = await request<{ token: string; user: MailboxUser }>('/api/auth/register', {
+  const data = await mailboxRequest<{ token: string; user: MailboxUser }>('/api/auth/register', {
     method: 'POST',
     json: { username, password, displayName },
     auth: false,
@@ -107,7 +109,7 @@ export async function register(
 }
 
 export async function login(username: string, password: string): Promise<{ token: string; user: MailboxUser }> {
-  const data = await request<{ token: string; user: MailboxUser }>('/api/auth/login', {
+  const data = await mailboxRequest<{ token: string; user: MailboxUser }>('/api/auth/login', {
     method: 'POST',
     json: { username, password },
     auth: false,
@@ -121,13 +123,13 @@ export function logoutLocal(): void {
 }
 
 export async function fetchMe(): Promise<MailboxUser> {
-  const data = await request<{ user: MailboxUser }>('/api/auth/me');
+  const data = await mailboxRequest<{ user: MailboxUser }>('/api/auth/me');
   saveMailboxSession(loadMailboxToken() ?? '', data.user);
   return data.user;
 }
 
 export async function patchDisplayName(displayName: string): Promise<MailboxUser> {
-  const data = await request<{ user: MailboxUser }>('/api/users/me', {
+  const data = await mailboxRequest<{ user: MailboxUser }>('/api/users/me', {
     method: 'PATCH',
     json: { displayName },
   });
@@ -138,22 +140,22 @@ export async function patchDisplayName(displayName: string): Promise<MailboxUser
 
 export async function searchUsers(q: string): Promise<UserSearchHit[]> {
   const params = new URLSearchParams({ q });
-  const data = await request<{ users: UserSearchHit[] }>(`/api/users/search?${params}`);
+  const data = await mailboxRequest<{ users: UserSearchHit[] }>(`/api/users/search?${params}`);
   return data.users;
 }
 
 export async function fetchInbox(): Promise<LetterListItem[]> {
-  const data = await request<{ letters: LetterListItem[] }>('/api/mail/inbox');
+  const data = await mailboxRequest<{ letters: LetterListItem[] }>('/api/mail/inbox');
   return data.letters;
 }
 
 export async function fetchSent(): Promise<LetterListItem[]> {
-  const data = await request<{ letters: LetterListItem[] }>('/api/mail/sent');
+  const data = await mailboxRequest<{ letters: LetterListItem[] }>('/api/mail/sent');
   return data.letters;
 }
 
 export async function fetchLetter(id: string): Promise<Letter> {
-  const data = await request<{ letter: Letter }>(`/api/mail/${id}`);
+  const data = await mailboxRequest<{ letter: Letter }>(`/api/mail/${id}`);
   return data.letter;
 }
 
@@ -163,7 +165,7 @@ export async function sendLetter(payload: {
   body: string;
   atmosphereMode?: MailboxAtmosphereMode;
 }): Promise<Letter> {
-  const data = await request<{ letter: Letter }>('/api/mail', {
+  const data = await mailboxRequest<{ letter: Letter }>('/api/mail', {
     method: 'POST',
     json: payload,
   });
@@ -171,5 +173,5 @@ export async function sendLetter(payload: {
 }
 
 export async function deleteLetter(id: string): Promise<void> {
-  await request(`/api/mail/${id}`, { method: 'DELETE' });
+  await mailboxRequest(`/api/mail/${id}`, { method: 'DELETE' });
 }

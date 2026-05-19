@@ -15,6 +15,7 @@ import {
 import { loadMailboxToken, loadMailboxUser } from '../lib/mailboxSession';
 import { MailboxApiError, type Letter, type LetterListItem, type MailboxUser } from '../lib/mailboxTypes';
 import type { AtmosphereMode } from '../lib/storage';
+import { useFlowStore } from './flowStore';
 
 const POLL_MS = 30_000;
 
@@ -177,6 +178,9 @@ export const useMailboxStore = create<MailboxState>((set, get) => {
           authPassword: '',
         });
         await get().refreshLists();
+        if (useFlowStore.getState().historyPanelOpen) {
+          void useFlowStore.getState().loadCloudHistory();
+        }
       } catch (e) {
         set({ loading: false, error: errorMessage(e) });
       }
@@ -185,6 +189,7 @@ export const useMailboxStore = create<MailboxState>((set, get) => {
     logout: () => {
       logoutLocal();
       stopPoll();
+      useFlowStore.getState().clearCloudHistory();
       set({
         session: null,
         view: 'auth',

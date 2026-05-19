@@ -63,3 +63,6 @@ Test on phone: `https://<your-site>.netlify.app/api/health` should return `{"ok"
 | GET | `/api/auth/me` | Bearer |
 | GET | `/api/mail/inbox` | Bearer |
 | POST | `/api/mail` | Bearer |
+| GET | `/api/history` | Bearer — list draft snapshots (preview only) |
+| GET | `/api/history/:id` | Bearer — full snapshot text |
+| POST | `/api/history` | Bearer — body `{ text, savedAt? }` (ms or ISO) |

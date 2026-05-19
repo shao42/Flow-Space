@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { loadMailboxToken } from '../lib/mailboxSession';
 import { useMailboxStore } from '../store/mailboxStore';
+import { useFlowStore } from '../store/flowStore';
 
 /** Restore session on load, Alt+L toggles MAIL panel. */
 export function useMailboxInit() {
@@ -21,6 +22,21 @@ export function useMailboxInit() {
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [togglePanel]);
+
+  useEffect(() => {
+    let prevSession = useMailboxStore.getState().session;
+    const unsub = useMailboxStore.subscribe((state) => {
+      const session = state.session;
+      if (session && !prevSession && useFlowStore.getState().historyPanelOpen) {
+        void useFlowStore.getState().loadCloudHistory();
+      }
+      if (!session && prevSession) {
+        useFlowStore.getState().clearCloudHistory();
+      }
+      prevSession = session;
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     const poll = () => {

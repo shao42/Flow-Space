@@ -1,6 +1,6 @@
 import { useFlowStore } from '../store/flowStore';
 import { useMailboxStore } from '../store/mailboxStore';
-import { DraftHistoryMenu } from './DraftHistoryMenu';
+import { DraftHistorySidebar } from './DraftHistorySidebar';
 
 export function ChromeActions() {
   const saveNow = useFlowStore((s) => s.saveNow);
@@ -15,7 +15,7 @@ export function ChromeActions() {
       <button type="button" className="fs-chrome__btn" onClick={saveNow}>
         SAVE
       </button>
-      <DraftHistoryMenu />
+      <DraftHistorySidebar />
       <button type="button" className="fs-chrome__btn" onClick={() => setReleaseModalOpen(true)}>
         RELEASE
       </button>

@@ -51,7 +51,20 @@ export type MailboxApiErrorCode =
   | 'FORBIDDEN'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
+  | 'LIMIT_REACHED'
   | 'UNKNOWN';
+
+export interface CloudHistoryListItem {
+  id: string;
+  savedAt: string;
+  preview: string;
+}
+
+export interface CloudHistorySnapshot {
+  id: string;
+  text: string;
+  savedAt: string;
+}
 
 export class MailboxApiError extends Error {
   constructor(
