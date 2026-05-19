@@ -264,7 +264,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       let msg =
         e instanceof MailboxApiError ? e.message : e instanceof Error ? e.message : '加载云端历史失败';
       if (e instanceof MailboxApiError && e.code === 'NOT_FOUND') {
-        msg = '云端历史接口未就绪，请确认已部署最新 Mailbox Worker（含 draft_snapshots 表）';
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        msg = host.includes('netlify.app') || host.includes('netlify.com')
+          ? '无法访问 /api/history：请在 Netlify 重新部署（需包含 netlify.toml 或 public/_redirects）'
+          : host.includes('github.io')
+            ? 'GitHub Pages 无法代理 /api：请在仓库 Variables 设置 MAILBOX_API_URL 为 Worker 地址，或改用 Netlify 部署'
+            : '云端历史接口未就绪，请确认已部署最新 Mailbox Worker（含 draft_snapshots 表）';
       }
       set({ cloudHistory: [], cloudHistoryLoading: false, cloudHistoryError: msg });
     }

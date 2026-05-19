@@ -1,3 +1,4 @@
+import { resolveMailboxApiBase } from './mailboxApiBase';
 import { clearMailboxSession, loadMailboxToken, saveMailboxSession } from './mailboxSession';
 import {
   MailboxApiError,
@@ -9,9 +10,7 @@ import {
 } from './mailboxTypes';
 
 function apiBase(): string {
-  const raw = import.meta.env.VITE_MAILBOX_API_URL;
-  if (raw == null || String(raw).trim() === '') return '';
-  return String(raw).replace(/\/+$/, '');
+  return resolveMailboxApiBase();
 }
 
 /** True when API calls can be attempted (dev proxy, Netlify /api proxy, or explicit Worker URL). */
