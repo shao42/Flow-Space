@@ -9,6 +9,24 @@
   VITE_BASE_URL = "/"
 
 [[redirects]]
+  from = "/api/health"
+  to = "https://flow-space-mailbox.923455218.workers.dev/api/health"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/history"
+  to = "https://flow-space-mailbox.923455218.workers.dev/api/history"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/history/*"
+  to = "https://flow-space-mailbox.923455218.workers.dev/api/history/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/*"
   to = "https://flow-space-mailbox.923455218.workers.dev/api/:splat"
   status = 200

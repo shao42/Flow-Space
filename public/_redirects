@@ -1,2 +1,5 @@
-# Netlify: proxy mailbox API to Cloudflare Worker (backup to root netlify.toml).
+# Netlify API proxy (specific paths first, then wildcard).
+/api/health  https://flow-space-mailbox.923455218.workers.dev/api/health  200!
+/api/history  https://flow-space-mailbox.923455218.workers.dev/api/history  200!
+/api/history/*  https://flow-space-mailbox.923455218.workers.dev/api/history/:splat  200!
 /api/*  https://flow-space-mailbox.923455218.workers.dev/api/:splat  200!
