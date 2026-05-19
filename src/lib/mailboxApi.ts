@@ -14,8 +14,10 @@ function apiBase(): string {
   return String(raw).replace(/\/+$/, '');
 }
 
+/** True when API calls can be attempted (dev proxy, Netlify /api proxy, or explicit Worker URL). */
 export function isMailboxApiConfigured(): boolean {
-  return apiBase() !== '' || import.meta.env.DEV;
+  if (import.meta.env.DEV) return true;
+  return true;
 }
 
 function mapErrorCode(error: string | undefined, status: number): import('./mailboxTypes').MailboxApiErrorCode {
@@ -46,11 +48,7 @@ async function request<T>(
   init?: RequestInit & { json?: unknown; auth?: boolean }
 ): Promise<T> {
   const base = apiBase();
-  if (!base && !import.meta.env.DEV) {
-    throw new MailboxApiError('NOT_CONFIGURED', '信箱 API 未配置');
-  }
-
-  const url = `${base}${path}`;
+  const url = base ? `${base}${path}` : path;
   const headers: Record<string, string> = {
     Accept: 'application/json',
     ...(init?.headers as Record<string, string> | undefined),

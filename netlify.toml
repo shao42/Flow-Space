@@ -1,0 +1,15 @@
+# Netlify: same-origin mailbox API (avoids mobile blocks on *.workers.dev).
+# Unset VITE_MAILBOX_API_URL in Netlify env; set VITE_BASE_URL=/
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  VITE_BASE_URL = "/"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://flow-space-mailbox.923455218.workers.dev/api/:splat"
+  status = 200
+  force = true

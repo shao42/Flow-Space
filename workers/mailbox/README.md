@@ -44,6 +44,16 @@ The workflow runs remote D1 migrations (`schema.sql`) then `wrangler deploy`.
 
 Set repository variable `MAILBOX_API_URL` to the deployed Worker URL for frontend builds.
 
+### Netlify (same-origin API for mobile)
+
+Root [`netlify.toml`](../../netlify.toml) proxies `/api/*` to the Worker so the browser never calls `*.workers.dev` (often blocked on iOS).
+
+1. Netlify env: `VITE_BASE_URL=/`, **do not set** `VITE_MAILBOX_API_URL` (or leave empty).
+2. Include `https://immersive-flow-space.netlify.app` in Worker `CORS_ORIGINS` (harmless when using proxy; needed if you ever switch back to direct Worker URL).
+3. Redeploy Netlify after pushing `netlify.toml`.
+
+Test on phone: `https://<your-site>.netlify.app/api/health` should return `{"ok":true}`.
+
 ## API (summary)
 
 | Method | Path | Auth |

@@ -97,10 +97,10 @@ export function MailboxPanel() {
         </button>
       </header>
 
-      {!apiConfigured && (
+      {import.meta.env.DEV && (
         <p className="fs-mailbox__warn">
-          信箱 API 未配置。本地开发请运行 <code>npm run mailbox:dev</code>，并在构建时设置{' '}
-          <code>VITE_MAILBOX_API_URL</code>。
+          本地开发请另开终端运行 <code>npm run mailbox:dev</code>（API 经 Vite 代理到{' '}
+          <code>/api</code>）。
         </p>
       )}
 
